@@ -1,5 +1,5 @@
 #!/bin/bash
 echo "Running composer install..."
-composer install --no-dev --optimize-autoloader
+/usr/bin/composer install --no-dev --optimize-autoloader
 
 
