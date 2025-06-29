@@ -34,17 +34,17 @@ jobs:
         run: |
           zip -r app.zip . -x '*.git*' '*vendor*' '*node_modules*'
 
-      - name: Upload to Elastic Beanstalk
+      - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
         with:
           application_name: PhpApp
           environment_name: PhpApp-env
-          region: us-east-1
           version_label: ${{ github.sha }}
-          deployment_package: app.zip
-        env:
+          region: us-east-1
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          existing_bucket_name: elasticbeanstalk-us-east-1-663136559298
+          deployment_package: PhpApp.zip
 
 
 
