@@ -1,3 +1,7 @@
+env:
+  EB_CLI_VERBOSE: true
+  AWS_EB_DEBUG: true
+
 name: Deploy PHP App to Elastic Beanstalk
 
 on:
