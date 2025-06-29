@@ -1,43 +1,47 @@
-env:
-  EB_CLI_VERBOSE: true
-  AWS_EB_DEBUG: true
-
-name: Deploy PHP App to Elastic Beanstalk
+name: Symfony Deploy to EB
 
 on:
   push:
     branches:
-      - main  # or your default branch
+      - main
 
 jobs:
   deploy:
+    name: Build & Deploy Symfony App
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.3'
-        extensions: mbstring, intl, pdo, xml, curl, json
-        coverage: none
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo, pdo_mysql
+          coverage: none
 
-    - name: Install Composer dependencies
-      run: composer install --no-dev --prefer-dist --no-progress --no-interaction
+      - name: Install Composer
+        run: |
+          composer install --prefer-dist --no-interaction
 
-    - name: Generate deployment package
-      run: zip -r app.zip . -x '*.git*' 'tests/*' '.github/*'
+      - name: Run Symfony Console Check
+        run: |
+          php bin/console cache:clear
+          php bin/console doctrine:schema:validate || true
 
-    - name: Deploy to AWS Elastic Beanstalk
-      uses: einaregilsson/beanstalk-deploy@v21
-      with:
-        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        application_name: PhpApp
-        environment_name: PhpApp-dev
-        version_label: ${{ github.run_id }}
-        region: us-east-1
-        deployment_package: app.zip
+      - name: Zip App for EB
+        run: |
+          zip -r app.zip . -x '*.git*' '*vendor*' '*node_modules*'
+
+      - name: Upload to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: PhpApp
+          environment_name: PhpApp-env
+          region: us-east-1
+          version_label: ${{ github.sha }}
+          deployment_package: app.zip
 
