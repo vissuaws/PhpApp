@@ -38,7 +38,7 @@ jobs:
         uses: einaregilsson/beanstalk-deploy@v21
         with:
           application_name: PhpApp
-          environment_name: PhpApp-env
+          environment_name: PhpApp-dev
           version_label: ${{ github.sha }}
           region: us-east-1
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
