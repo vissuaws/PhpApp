@@ -1,50 +1,44 @@
-name: Symfony Deploy to EB
-
+echo 'name: deploy-to-aws-eb
+# Controls when the action will run. 
 on:
+  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches:
-      - main
-
+    branches: [ development ]
+    # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  deploy:
-    name: Build & Deploy Symfony App
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mbstring, intl, pdo, pdo_mysql
-          coverage: none
-
-      - name: Install Composer
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-22.04 
+    steps:     
+      - uses: actions/checkout@master
+      - name: Run PHP Unit tests
         run: |
-          composer install --prefer-dist --no-interaction
-
-      - name: Run Symfony Console Check
+          composer install
+          php bin/phpunit
+        shell: bash
+      - name: Add AWS CLI credentials
         run: |
-          php bin/console cache:clear
-          php bin/console doctrine:schema:validate || true
-
-      - name: Zip App for EB
+          mkdir ~/.aws
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} 
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        shell: bash
+      - name: Set permissions
+        run: chmod +x .github/scripts/install-eb-command.sh
+        shell: bash
+      - name: Run the EB command installer
+        run: ./.github/scripts/install-eb-command.sh
+        shell: bash
+      - name: Deploy to AWS Elastic Beanstalk
+        run: eb deploy PhpApp
+        shell: bash
+      - name: Clean up GitHub Actions Pipeline
+        if: always()
         run: |
-          zip -r app.zip . -x '*.git*' '*vendor*' '*node_modules*'
-
-      - name: Deploy to Elastic Beanstalk
-        uses: einaregilsson/beanstalk-deploy@v21
-        with:
-          application_name: PhpApp
-          environment_name: PhpApp-dev
-          version_label: ${{ github.sha }}
-          region: us-east-1
-          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          existing_bucket_name: elasticbeanstalk-us-east-1-663136559298
-          deployment_package: app.zip
-
-
-
+          rm -rf ~/.aws || true
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+        shell: bash
+' > .github/workflows/deploy.yml
