@@ -1,4 +1,6 @@
 {
+    "name": "vissuaws/phpapp",
+    "description": "My Symfony PHP app for AWS Elastic Beanstalk",	
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
